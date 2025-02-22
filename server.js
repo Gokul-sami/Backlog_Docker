@@ -6,14 +6,15 @@ import path from "path";
 const app = express();
 app.use(express.json());
 
-const BASE_DIR = "/app/repos";  // Railway stores cloned repos here
+const PORT = process.env.PORT || 3000;
+const BASE_DIR = "/tmp/repos"; // Use /tmp for compatibility with Render
 
 // Ensure base directory exists
 if (!fs.existsSync(BASE_DIR)) {
     fs.mkdirSync(BASE_DIR, { recursive: true });
 }
 
-// API to Clone Repo and Run in Docker
+// API to Clone Repo and Run
 app.post("/run-repo", async (req, res) => {
     const { repoUrl } = req.body;
     if (!repoUrl) {
@@ -27,26 +28,14 @@ app.post("/run-repo", async (req, res) => {
     exec(`git clone ${repoUrl} ${repoPath}`, (error, stdout, stderr) => {
         if (error) return res.status(500).json({ error: `Git clone failed: ${stderr}` });
 
-        // Generate Dockerfile dynamically
-        let dockerfileContent = `
-        FROM node:latest
-        WORKDIR /app
-        COPY . .
-        RUN npm install
-        CMD ["npm", "start"]
-        `;
+        // Install Dependencies
+        exec(`cd ${repoPath} && npm install`, (error, stdout, stderr) => {
+            if (error) return res.status(500).json({ error: `NPM install failed: ${stderr}` });
 
-        fs.writeFileSync(path.join(repoPath, "Dockerfile"), dockerfileContent);
-
-        // Build & Run Docker Container
-        const containerName = `container-${Date.now()}`;
-        exec(`docker build -t ${containerName} ${repoPath} && docker run --rm ${containerName}`, (error, stdout, stderr) => {
-            if (error) return res.status(500).json({ error: `Execution failed: ${stderr}` });
-            
-            res.json({ message: "Project executed!", logs: stdout });
+            res.json({ message: "Repo cloned and dependencies installed!", logs: stdout });
         });
     });
 });
 
 // Start Express Server
-app.listen(5000, () => console.log("Server running on Railway"));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
