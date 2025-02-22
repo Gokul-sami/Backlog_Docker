@@ -8,7 +8,7 @@ WORKDIR /app
 RUN npm install
 
 # Copy the rest of the application files
-COPY . .
+COPY package.json ./
 
 # Expose the port your app runs on
 EXPOSE 5000
