@@ -4,9 +4,9 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-  "postinstall": "apt-get update && apt-get install -y git || true",
+    "postinstall": "apt-get update && apt-get install -y git || true",
     "start": "node server.js"
-  }
+  },
   "dependencies": {
     "express": "^4.18.2"
   }
